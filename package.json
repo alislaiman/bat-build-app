@@ -1,0 +1,21 @@
+{
+  "name": "bat-build-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "BÂT Build Android app (Capacitor shell around the BÂT Build web app)",
+  "scripts": {
+    "web": "node copy-web.cjs",
+    "sync": "node copy-web.cjs && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "7.6.10",
+    "@capacitor/app": "7.1.2",
+    "@capacitor/cli": "7.6.10",
+    "@capacitor/core": "7.6.10",
+    "@capacitor/filesystem": "7.1.9",
+    "@capacitor/share": "7.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "4.0.0"
+  }
+}

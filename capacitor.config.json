@@ -1,0 +1,9 @@
+{
+  "appId": "com.batbuild.app",
+  "appName": "BÂT Build",
+  "webDir": "www",
+  "android": {
+    "adjustMarginsForEdgeToEdge": "force",
+    "backgroundColor": "#0a0a0a"
+  }
+}
