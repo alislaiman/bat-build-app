@@ -15,6 +15,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+      - name: Check the Firebase file
+        run: |
+          if [ ! -f android/app/google-services.json ]; then echo "::error::Add google-services.json (from Firebase) to android/app/ so notifications work"; exit 1; fi
       - name: Install
         run: npm ci
       - name: App icon

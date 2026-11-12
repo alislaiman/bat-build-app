@@ -956,7 +956,7 @@ function accountMenu(){
  $('#cancel').onclick=()=>$('#dlg').close();
  $('#myProf').onclick=()=>openProfile(session);
  if($('#vaOpen'))$('#vaOpen').onclick=()=>{$('#dlg').close();viewAsPick()};
- if($('#signout'))$('#signout').onclick=async()=>{$('#dlg').close();if(CLOUD){await sb.auth.signOut()}else{setSession(null);location.hash='';render()}};
+ if($('#signout'))$('#signout').onclick=async()=>{$('#dlg').close();if(CLOUD){await pushForget();await sb.auth.signOut()}else{setSession(null);location.hash='';render()}};
  f.onsubmit=async e=>{e.preventDefault();const pw=f.pw.value;if(pw.length<8){alert('Use at least 8 characters.');return}
   const{error}=await sb.auth.updateUser({password:pw});alert(error?error.message:'Password updated.');if(!error)$('#dlg').close()};
  $('#dlg').showModal();
@@ -4330,6 +4330,23 @@ const SITE_URL=(typeof CFG!=='undefined'&&CFG&&CFG.siteUrl)||'https://imaginativ
  if(P.App)P.App.addListener('backButton',()=>{const d=[...document.querySelectorAll('dialog[open]')].pop();if(d){d.close();return}
   if(location.hash&&location.hash!=='#'&&location.hash!=='#/'&&history.length>1){history.back();return}P.App.minimizeApp()});
 })();
+function openLinkTo(link){const[kind,pid,fid]=String(link||'').split(':');
+ if(kind==='dm'&&pid){q='';dmWith=pid;dmDraft='';go('chats');dmWith=pid;render()}
+ else if(kind==='chat'&&pid&&fid&&inScope(pid)){chatFrom='chats';projF=pid;fp=pid;ff=null;chatRoom=fid;go('chat')}
+ else if(kind==='files'&&R().routes.includes('files')&&inScope(pid)){projF=pid;fp=pid;ff=fid;q='';go('files')}else if(kind==='site'&&R().routes.includes('site')&&inScope(pid)){openProject(pid,'site')}else if(kind==='promat'&&R().routes.includes('promat')){prmTab='orders';q='';go('promat')}else if(['procurement','pos'].includes(kind)&&inScope(pid)){q='';stF='';procTab=kind==='pos'?'pos':'items';openProject(pid,'procurement')}else if(kind==='issues'&&inScope(pid)){q='';openProject(pid,'site')}else if(kind==='contracts'&&inScope(pid)){openProject(pid,'contracts')}else if(kind==='design'&&inScope(pid)){q='';openProject(pid,'design')}else if(kind==='plan'&&inScope(pid)){openProject(pid,'plan')}else if(kind==='stock'){if(pid==='main'||!pid){invTab='main';go('inventory')}else if(inScope(pid))openProject(pid,'stock')}else if(kind==='devis'&&inScope(pid)){q='';stF='';openProject(pid,'devis');if(fid)setTimeout(()=>openQuote(fid),50)}else render()}
+// ---- Phone notifications (Android app): ask once, save this phone, open the right page on tap ----
+let pushPending=null,pushFor=null;
+function pushOpen(link){if(!link)return;pushPending=link;const t=setInterval(()=>{if(session&&!loading&&me()){clearInterval(t);const l=pushPending;pushPending=null;document.querySelectorAll('dialog[open]').forEach(d=>d.close());try{openLinkTo(l)}catch(e){render()}}},400);setTimeout(()=>clearInterval(t),60000)}
+async function pushSetup(){if(!NATIVE||!CLOUD||!session||loading||!me()||pushFor===session)return;const PN=window.Capacitor.Plugins.PushNotifications;if(!PN)return;pushFor=session;
+ try{let p=await PN.checkPermissions();if(p.receive!=='granted'&&p.receive!=='denied')p=await PN.requestPermissions();if(p.receive!=='granted')return;
+  await PN.createChannel({id:'bat',name:'BÂT Build',description:'Messages and project updates',importance:5,visibility:1,sound:'default'}).catch(()=>{});
+  await PN.register()}catch(e){console.warn('push',e)}}
+async function pushForget(){if(!NATIVE||!CLOUD)return;let t=null;try{t=localStorage.getItem('pushTok')}catch(e){}if(t)try{await sb.rpc('unregister_push',{tok:t})}catch(e){}pushFor=null}
+(function(){if(!NATIVE)return;const PN=window.Capacitor.Plugins.PushNotifications;if(!PN)return;
+ PN.addListener('registration',async t=>{try{localStorage.setItem('pushTok',t.value)}catch(e){}if(CLOUD&&session){const{error}=await sb.rpc('register_push',{tok:t.value,plat:'android'});if(error)console.warn('push save',error.message)}});
+ PN.addListener('registrationError',e=>console.warn('push registration',e&&e.error));
+ PN.addListener('pushNotificationActionPerformed',a=>pushOpen(a&&a.notification&&a.notification.data&&a.notification.data.link));
+ setInterval(pushSetup,2000)})();
 // ---- Notifications ----
 const myNotifs=()=>db.notifs.filter(n=>n.user===session).sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')));
 function drawBell(){const n=myNotifs().filter(x=>!x.readAt).length;$('#bellBtn').innerHTML=svgi('bell')+(n?`<b>${n>99?'99+':n}</b>`:'');$('#bellBtn').setAttribute('aria-label',n?n+' unread notifications':'Notifications')}
@@ -4371,8 +4388,7 @@ function openBell(){
  $('#cancel').onclick=()=>$('#dlg').close();
  if($('#readAll'))$('#readAll').onclick=async()=>{await markRead(L);openBell()};
  f.querySelectorAll('[data-nid]').forEach(b=>b.onclick=()=>{const n=db.notifs.find(x=>x.id===b.dataset.nid);$('#dlg').close();markRead([n]);
-  const[kind,pid,fid]=(n.link||'').split(':');
-  if(kind==='files'&&R().routes.includes('files')&&inScope(pid)){projF=pid;fp=pid;ff=fid;q='';go('files')}else if(kind==='site'&&R().routes.includes('site')&&inScope(pid)){openProject(pid,'site')}else if(kind==='promat'&&R().routes.includes('promat')){prmTab='orders';q='';go('promat')}else if(['procurement','pos'].includes(kind)&&inScope(pid)){q='';stF='';procTab=kind==='pos'?'pos':'items';openProject(pid,'procurement')}else if(kind==='issues'&&inScope(pid)){q='';openProject(pid,'site')}else if(kind==='contracts'&&inScope(pid)){openProject(pid,'contracts')}else if(kind==='design'&&inScope(pid)){q='';openProject(pid,'design')}else if(kind==='plan'&&inScope(pid)){openProject(pid,'plan')}else if(kind==='stock'){if(pid==='main'||!pid){invTab='main';go('inventory')}else if(inScope(pid))openProject(pid,'stock')}else if(kind==='devis'&&inScope(pid)){q='';stF='';openProject(pid,'devis');if(fid)setTimeout(()=>openQuote(fid),50)}else render()});
+  openLinkTo(n.link)});
  f.onsubmit=e=>e.preventDefault();
  if(!$('#dlg').open)$('#dlg').showModal();
 }

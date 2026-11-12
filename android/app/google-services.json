@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "333461806490",
+    "project_id": "batbuild",
+    "storage_bucket": "batbuild.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:333461806490:android:ccd1f2ec7a9bfc6219ae23",
+        "android_client_info": {
+          "package_name": "com.batbuild.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChOMMvO0OLBI10TToVn3STTXa3y2hVEVI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
